@@ -8,7 +8,7 @@
 %define CONN_CALL 42
 %define CLOSE_CALL 3
 %define READ_CALL 0
-%define BUFF_SIZE 4096
+%define RES_BUFF_SIZE 4096
 %define NEW_LINE 10
 %define CARRIAGE_RET 13
 %define EXIT_CALL 60
@@ -77,10 +77,10 @@ _send_req:
   ret
 
 _read_res:
-  sub rsp, BUFF_SIZE ; create buffer for res text on stack
+  sub rsp, RES_BUFF_SIZE ; create buffer for res text on stack
   mov rax, READ_CALL
   mov rsi, rsp
-  mov rdx, BUFF_SIZE
+  mov rdx, RES_BUFF_SIZE
   syscall
   test rax, rax
   js read_res_err
@@ -89,7 +89,7 @@ _read_res:
   mov rdi, FD_STD_OUT
   mov rsi, rsp
   syscall
-  add rsp, BUFF_SIZE ; clean up stack
+  add rsp, RES_BUFF_SIZE ; clean up stack
   ret
 
 _close_sock:
@@ -98,34 +98,28 @@ _close_sock:
   ret
 
 sock_err:
-  mov rax, WRITE_CALL
-  mov rdi, FD_STD_ERR
   lea rsi, sock_err_msg
   lea rdx, sock_err_msg_len
-  syscall
-  jmp exit_err
+  jmp write_err_sc
 
 connect_err:
-  mov rax, WRITE_CALL
-  mov rdi, FD_STD_ERR
   lea rsi, conn_err_msg
   lea rdx, conn_err_msg_len
-  syscall
-  jmp exit_err
+  jmp write_err_sc
 
 send_req_err:
-  mov rax, WRITE_CALL
-  mov rdi, FD_STD_ERR
   lea rsi, send_req_err_msg
   lea rdx, send_req_err_msg_len
-  syscall
-  jmp exit_err
+  jmp write_err_sc
 
 read_res_err:
-  mov rax, WRITE_CALL
-  mov rdi, FD_STD_ERR
   lea rsi, read_res_err_msg
   lea rdx, read_res_err_msg_len
+  jmp write_err_sc
+
+write_err_sc:
+  mov rax, WRITE_CALL
+  mov rdi, FD_STD_ERR
   syscall
   jmp exit_err
 
