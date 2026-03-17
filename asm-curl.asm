@@ -5,18 +5,43 @@
 %define AF_INET 2
 %define SOCK_STREAM 1
 %define DEFAULT_PROTO 0
+%define CONN_CALL 42
+%define CLOSE_CALL 3
+%define READ_CALL 0
+; %define BUFF_SIZE 4096
+%define BUFF_SIZE 40960 ; TODO: Set proper size
+%define NEW_LINE 10
+%define CARRIAGE_RET 13
 %define EXIT_CALL 60
 %define ERR_EXIT_STAT 1
 %define NO_ERR_EXIT_STAT 0
 
 section .data
-  sock_err_msg: db "Error while trying to create a socket", 10
+  sock_err_msg: db "Error while trying to create a socket", NEW_LINE
   sock_err_msg_len: equ $-sock_err_msg
-  
+  conn_err_msg: db "Error while trying to establish a connection", NEW_LINE
+  conn_err_msg_len: equ $-conn_err_msg
+  addr:
+    dw AF_INET
+    dw 0x5000    ; sin_port: 80 (little endian 0x0050 -> big endian)
+    db 127,0,0,1 ; sin_addr 127.0.0.1
+    dq 0         ; sin_zero: 8 bytes of padding
+  addr_len: equ $-addr
+  req:
+    db "GET / HTTP/1.1",CARRIAGE_RET,NEW_LINE
+    db "Host: 127.0.0.1",CARRIAGE_RET,NEW_LINE
+    db "User-Agent: asm-curl",CARRIAGE_RET,NEW_LINE
+    db "Connection: close",CARRIAGE_RET,NEW_LINE,CARRIAGE_RET,NEW_LINE
+  req_len: equ $-req
+
 section .text
 global _start
 _start:
   call _create_sock
+  call _connect
+  call _send_req
+  call _read_res
+  call _close_sock
   jmp exit
 
 _create_sock:
@@ -29,12 +54,65 @@ _create_sock:
   js sock_err
   ret
 
+_connect:
+  mov rdi, rax
+  mov rax, CONN_CALL
+  lea rsi, addr
+  mov rdx, addr_len
+  syscall
+  test rax, rax
+  js connect_err
+  ret
+
+_send_req:
+  mov rax, WRITE_CALL
+  lea rsi, req
+  mov rdx, req_len
+  syscall
+  test rax, rax
+  js connect_err
+  ret
+
+_read_res:
+  sub rsp, BUFF_SIZE       ; create buffer for res text on stack
+  mov rax, READ_CALL
+  mov rsi, rsp
+  mov rdx, BUFF_SIZE
+  syscall
+  mov byte [rax + rsp], NEW_LINE ; add trailing new line. TODO: not working
+  inc rax
+  mov byte [rax + rsp], CARRIAGE_RET
+  inc rax
+  mov rdx, rax             ; num of bytes to read 
+  mov rax, WRITE_CALL
+  mov rdi, FD_STD_OUT
+  mov rsi, rsp
+  syscall
+  add rsp, BUFF_SIZE       ; clean up stack
+  ret
+
+_close_sock:
+  mov rax, CLOSE_CALL
+  syscall
+  ret
+
 sock_err:
   mov rax, WRITE_CALL
   mov rdi, FD_STD_ERR
   lea rsi, sock_err_msg
   lea rdx, sock_err_msg_len
   syscall
+  jmp exit_err
+
+connect_err:
+  mov rax, WRITE_CALL
+  mov rdi, FD_STD_ERR
+  lea rsi, conn_err_msg
+  lea rdx, conn_err_msg_len
+  syscall
+  jmp exit_err
+
+exit_err:
   mov rax, EXIT_CALL
   mov rdi, ERR_EXIT_STAT
   syscall
