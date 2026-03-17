@@ -21,6 +21,9 @@ section .data
   sock_err_msg_len: equ $-sock_err_msg
   conn_err_msg: db "Error while trying to establish a connection", NEW_LINE
   conn_err_msg_len: equ $-conn_err_msg
+  send_req_err_msg: db "Error while sending request", NEW_LINE
+  send_req_err_msg_len: equ $-send_req_err_msg
+
   addr:
     dw AF_INET
     dw 0x5000    ; sin_port: 80 (little endian 0x0050 -> big endian)
@@ -70,7 +73,7 @@ _send_req:
   mov rdx, req_len
   syscall
   test rax, rax
-  js connect_err
+  js send_req_err
   ret
 
 _read_res:
@@ -105,6 +108,14 @@ connect_err:
   mov rdi, FD_STD_ERR
   lea rsi, conn_err_msg
   lea rdx, conn_err_msg_len
+  syscall
+  jmp exit_err
+
+send_req_err:
+  mov rax, WRITE_CALL
+  mov rdi, FD_STD_ERR
+  lea rsi, send_req_err_msg
+  lea rdx, send_req_err_msg_len
   syscall
   jmp exit_err
 
