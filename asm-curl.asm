@@ -1,16 +1,18 @@
 %define WRITE_CALL 1
 %define FD_STD_OUT 1
+%define FD_STD_ERR 2
 %define SOCKET_CALL 41
 %define AF_INET 2
 %define SOCK_STREAM 1
 %define DEFAULT_PROTO 0
 %define EXIT_CALL 60
 %define ERR_EXIT_STAT 1
+%define NO_ERR_EXIT_STAT 0
 
 section .data
-  err_msg: db "Encounter an error",10
-  err_msg_len: equ $-err_msg
-
+  sock_err_msg: db "Error while trying to create a socket", 10
+  sock_err_msg_len: equ $-sock_err_msg
+  
 section .text
 global _start
 _start:
@@ -24,14 +26,14 @@ _create_sock:
   mov rdx, DEFAULT_PROTO
   syscall
   test rax, rax
-  js _exit_err
+  js sock_err
   ret
 
-_exit_err:
+sock_err:
   mov rax, WRITE_CALL
-  mov rdi, FD_STD_OUT
-  lea rsi, err_msg
-  lea rdx, err_msg_len
+  mov rdi, FD_STD_ERR
+  lea rsi, sock_err_msg
+  lea rdx, sock_err_msg_len
   syscall
   mov rax, EXIT_CALL
   mov rdi, ERR_EXIT_STAT
@@ -39,5 +41,5 @@ _exit_err:
 
 exit:
   mov rax, EXIT_CALL
-  mov rdi, 0
+  mov rdi, NO_ERR_EXIT_STAT
   syscall
