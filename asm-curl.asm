@@ -79,10 +79,6 @@ _read_res:
   mov rsi, rsp
   mov rdx, BUFF_SIZE
   syscall
-  mov byte [rax + rsp], NEW_LINE ; add trailing new line. TODO: not working
-  inc rax
-  mov byte [rax + rsp], CARRIAGE_RET
-  inc rax
   mov rdx, rax             ; num of bytes to read 
   mov rax, WRITE_CALL
   mov rdi, FD_STD_OUT
