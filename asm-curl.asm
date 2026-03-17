@@ -8,8 +8,7 @@
 %define CONN_CALL 42
 %define CLOSE_CALL 3
 %define READ_CALL 0
-; %define BUFF_SIZE 4096
-%define BUFF_SIZE 40960 ; TODO: Set proper size
+%define BUFF_SIZE 4096
 %define NEW_LINE 10
 %define CARRIAGE_RET 13
 %define EXIT_CALL 60
