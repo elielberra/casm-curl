@@ -41,9 +41,14 @@ section .text
 global _start
 _start:
   call _create_sock
+  mov r12, rax      ; prevent FD from getting clobbered
+  mov rdi, r12      ; set FD as param for syscall inside next function
   call _connect
+  mov rdi, r12
   call _send_req
+  mov rdi, r12
   call _read_res
+  mov rdi, r12
   call _close_sock
   jmp exit
 
@@ -58,7 +63,6 @@ _create_sock:
   ret
 
 _connect:
-  mov rdi, rax
   mov rax, CONN_CALL
   lea rsi, addr
   mov rdx, addr_len
