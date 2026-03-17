@@ -20,9 +20,9 @@ section .data
   sock_err_msg_len: equ $-sock_err_msg
   conn_err_msg: db "Error while trying to establish a connection", NEW_LINE
   conn_err_msg_len: equ $-conn_err_msg
-  send_req_err_msg: db "Error while sending request", NEW_LINE
+  send_req_err_msg: db "Error while sending the request", NEW_LINE
   send_req_err_msg_len: equ $-send_req_err_msg
-  read_res_err_msg: db "Errow while reading response", NEW_LINE
+  read_res_err_msg: db "Errow while reading the response", NEW_LINE
   read_res_err_msg_len: equ $-read_res_err_msg
   addr:
     dw AF_INET
@@ -88,7 +88,7 @@ _read_res:
   syscall
   test rax, rax
   js read_res_err
-  mov rdx, rax       ; num of bytes to read 
+  mov rdx, rax           ; num of bytes to read 
   mov rax, WRITE_CALL
   mov rdi, FD_STD_OUT
   mov rsi, rsp
