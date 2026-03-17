@@ -23,7 +23,8 @@ section .data
   conn_err_msg_len: equ $-conn_err_msg
   send_req_err_msg: db "Error while sending request", NEW_LINE
   send_req_err_msg_len: equ $-send_req_err_msg
-
+  read_res_err_msg: db "Errow while reading response", NEW_LINE
+  read_res_err_msg_len: equ $-read_res_err_msg
   addr:
     dw AF_INET
     dw 0x5000    ; sin_port: 80 (little endian 0x0050 -> big endian)
@@ -77,17 +78,19 @@ _send_req:
   ret
 
 _read_res:
-  sub rsp, BUFF_SIZE       ; create buffer for res text on stack
+  sub rsp, BUFF_SIZE ; create buffer for res text on stack
   mov rax, READ_CALL
   mov rsi, rsp
   mov rdx, BUFF_SIZE
   syscall
-  mov rdx, rax             ; num of bytes to read 
+  test rax, rax
+  js read_res_err
+  mov rdx, rax       ; num of bytes to read 
   mov rax, WRITE_CALL
   mov rdi, FD_STD_OUT
   mov rsi, rsp
   syscall
-  add rsp, BUFF_SIZE       ; clean up stack
+  add rsp, BUFF_SIZE ; clean up stack
   ret
 
 _close_sock:
@@ -116,6 +119,14 @@ send_req_err:
   mov rdi, FD_STD_ERR
   lea rsi, send_req_err_msg
   lea rdx, send_req_err_msg_len
+  syscall
+  jmp exit_err
+
+read_res_err:
+  mov rax, WRITE_CALL
+  mov rdi, FD_STD_ERR
+  lea rsi, read_res_err_msg
+  lea rdx, read_res_err_msg_len
   syscall
   jmp exit_err
 
