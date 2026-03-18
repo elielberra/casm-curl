@@ -88,11 +88,12 @@ _read_res:
   syscall
   test rax, rax
   js read_res_err
-  mov rdx, rax           ; num of bytes to read 
-  mov rax, WRITE_CALL
-  mov rdi, FD_STD_OUT
-  mov rsi, rsp
-  syscall
+  print_res:
+    mov rdx, rax         ; num of bytes to read 
+    mov rax, WRITE_CALL
+    mov rdi, FD_STD_OUT
+    mov rsi, rsp
+    syscall
   add rsp, RES_BUFF_SIZE ; clean up stack
   ret
 
@@ -104,27 +105,32 @@ _close_sock:
 sock_err:
   lea rsi, sock_err_msg
   lea rdx, sock_err_msg_len
-  jmp write_err_sc
+  jmp handle_err
 
 connect_err:
   lea rsi, conn_err_msg
   lea rdx, conn_err_msg_len
-  jmp write_err_sc
+  jmp handle_err
 
 send_req_err:
   lea rsi, send_req_err_msg
   lea rdx, send_req_err_msg_len
-  jmp write_err_sc
+  jmp handle_err
 
 read_res_err:
   lea rsi, read_res_err_msg
   lea rdx, read_res_err_msg_len
-  jmp write_err_sc
+  jmp handle_err
 
-write_err_sc:
+handle_err:
   mov rax, WRITE_CALL
   mov rdi, FD_STD_ERR
   syscall
+  jmp err_cleanup
+
+err_cleanup:
+  mov rdi, r12
+  call _close_sock
   jmp exit_err
 
 exit_err:
