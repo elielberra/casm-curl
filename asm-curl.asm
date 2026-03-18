@@ -16,9 +16,9 @@
 %define NO_ERR_EXIT_STAT 0
 
 section .data
-  sock_err_msg: db "Error while trying to create a socket", NEW_LINE
+  sock_err_msg: db "Error while creating a socket", NEW_LINE
   sock_err_msg_len: equ $-sock_err_msg
-  conn_err_msg: db "Error while trying to establish a connection", NEW_LINE
+  conn_err_msg: db "Error while attempting to establish a connection", NEW_LINE
   conn_err_msg_len: equ $-conn_err_msg
   send_req_err_msg: db "Error while sending the request", NEW_LINE
   send_req_err_msg_len: equ $-send_req_err_msg
