@@ -26,7 +26,7 @@ section .data
   read_res_err_msg_len: equ $-read_res_err_msg
   addr:
     dw AF_INET
-    dw 0x5000    ; sin_port: 80 (little endian 0x0050 -> big endian)
+    dw 0x401F    ; sin_port: 8000 (little endian 0x1F40-> big endian)
     db 127,0,0,1 ; sin_addr 127.0.0.1
     dq 0         ; sin_zero: 8 bytes of padding
   addr_len: equ $-addr
