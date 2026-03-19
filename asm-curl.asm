@@ -15,6 +15,13 @@
 %define ERR_EXIT_STAT 1
 %define NO_ERR_EXIT_STAT 0
 
+struc sock_addr
+  .family resw 1
+  .port resw 1
+  .ip resd 1
+  .padding resq 1
+endstruc
+
 section .data
   sock_err_msg: db "Error while creating a socket", NEW_LINE
   sock_err_msg_len: equ $-sock_err_msg
@@ -25,10 +32,12 @@ section .data
   read_res_err_msg: db "Errow while reading the response", NEW_LINE
   read_res_err_msg_len: equ $-read_res_err_msg
   addr:
-    dw AF_INET
-    dw 0x401F    ; sin_port: 8000 (little endian 0x1F40-> big endian)
-    db 127,0,0,1 ; sin_addr 127.0.0.1
-    dq 0         ; sin_zero: 8 bytes of padding
+    istruc sock_addr
+      at sock_addr.family, dw AF_INET
+      at sock_addr.port, dw 0x401F    ; sin_port: 8000 (little endian 0x1F40-> big endian)
+      at sock_addr.ip, db 127,0,0,1
+      at sock_addr.padding, dq 0
+    iend
   addr_len: equ $-addr
   req:
     db "GET / HTTP/1.1",CARRIAGE_RET,NEW_LINE
@@ -58,7 +67,7 @@ _create_sock:
   mov rsi, SOCK_STREAM
   mov rdx, DEFAULT_PROTO
   syscall
-  test rax, rax
+  test rax, rax          ; check if syscall returned err with status code -1
   js sock_err
   ret
 
