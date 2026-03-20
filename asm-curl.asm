@@ -1,3 +1,4 @@
+%define NUM_REQ_ARGS 2
 %define WRITE_CALL 1
 %define FD_STD_OUT 1
 %define FD_STD_ERR 2
@@ -23,14 +24,16 @@ struc sock_addr
 endstruc
 
 section .data
+  args_err_msg: db "Error: Wrong number of arguments. Usage: asm-curl <URL>", NEW_LINE
+  args_err_msg_len: equ $ - args_err_msg
   sock_err_msg: db "Error while creating a socket", NEW_LINE
-  sock_err_msg_len: equ $-sock_err_msg
+  sock_err_msg_len: equ $ - sock_err_msg
   conn_err_msg: db "Error while attempting to establish a connection", NEW_LINE
-  conn_err_msg_len: equ $-conn_err_msg
+  conn_err_msg_len: equ $ - conn_err_msg
   send_req_err_msg: db "Error while sending the request", NEW_LINE
-  send_req_err_msg_len: equ $-send_req_err_msg
+  send_req_err_msg_len: equ $ - send_req_err_msg
   read_res_err_msg: db "Errow while reading the response", NEW_LINE
-  read_res_err_msg_len: equ $-read_res_err_msg
+  read_res_err_msg_len: equ $ - read_res_err_msg
   addr:
     istruc sock_addr
       at sock_addr.family, dw AF_INET
@@ -38,17 +41,35 @@ section .data
       at sock_addr.ip, db 127,0,0,1
       at sock_addr.padding, dq 0
     iend
-  addr_len: equ $-addr
+  addr_len: equ $ - addr
   req:
     db "GET / HTTP/1.1",CARRIAGE_RET,NEW_LINE
     db "Host: 127.0.0.1",CARRIAGE_RET,NEW_LINE
     db "User-Agent: asm-curl",CARRIAGE_RET,NEW_LINE
     db "Connection: close",CARRIAGE_RET,NEW_LINE,CARRIAGE_RET,NEW_LINE
-  req_len: equ $-req
+  req_len: equ $ - req
 
 section .text
+
+args_err:
+  mov rax, WRITE_CALL
+  mov rdi, FD_STD_ERR
+  mov rsi, args_err_msg
+  mov rdx, args_err_msg_len
+  syscall
+  jmp exit_err
+
+_parse_args:
+  cmp rdi, NUM_REQ_ARGS
+  jne args_err
+  mov rax, rsi
+  ret
+
 global _start
 _start:
+  mov rdi, [rsp]
+  mov rsi, [rsp + 16]
+  call _parse_args
   call _create_sock
   mov r12, rax      ; prevent FD from getting clobbered
   mov rdi, r12      ; set FD as param for syscall inside next function
