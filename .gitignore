@@ -1,2 +1,5 @@
 *.o
 asm-curl
+get_ip
+get_domain
+.vscode
