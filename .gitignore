@@ -2,4 +2,5 @@
 asm-curl
 get_ip
 get_domain
+get_sockaddr
 .vscode

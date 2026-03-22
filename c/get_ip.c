@@ -15,8 +15,8 @@ int main(int argc, char *argv[]) {
   struct addrinfo *result;
   memset(&hint, 0, sizeof(hint));
   hint.ai_family = AF_INET;
-  hint.ai_socktype = SOCK_STREAM;    // Retrieve schema from get_domain instead of hardcoding
-  int status = getaddrinfo(hostname, "https", &hint, &result);
+  hint.ai_socktype = SOCK_STREAM;    // Retrieve port from get_domain instead of hardcoding
+  int status = getaddrinfo(hostname, "8000", &hint, &result);
   if (status) {
     printf("getaddrinfo failed with status code %i!\n", status);
     return EXIT_FAILURE;

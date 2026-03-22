@@ -6,7 +6,7 @@ CC_FLAGS=-g
 # %: %.c
 # 	$(CC) $(CC_FLAGS) -o $@ $^
 
-all: get_ip get_domain
+all: get_ip get_domain get_sockaddr
 
 get_ip: get_ip.c
 	$(CC) $(CC_FLAGS) -o $@ $^
@@ -14,5 +14,8 @@ get_ip: get_ip.c
 get_domain: get_domain.c
 	$(CC) $(CC_FLAGS) -o $@ $^ -lcurl
 
+get_sockaddr: get_sockaddr.c
+	$(CC) $(CC_FLAGS) -o $@ $^ -lcurl
+
 clean:
-	rm -rf *.dSYM get_ip get_domain
+	rm -rf *.dSYM get_ip get_domain get_sockaddr
