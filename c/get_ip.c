@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     printf("Usage: %s <hostname>\n", argv[0]);
     return EXIT_FAILURE;
   }
-  const char * hostname = argv[1];
+  const char *hostname = argv[1];
   struct addrinfo hint;
   struct addrinfo *result;
   memset(&hint, 0, sizeof(hint));
