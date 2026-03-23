@@ -70,13 +70,3 @@ struct sockaddr* get_sockaddr(const char *unprocessed_url){
   }
   return remote_addr;
 }
-
-int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    printf("Usage: %s <URL>\n", argv[0]);
-    return EXIT_FAILURE;
-  }
-  const char *user_url = argv[1];
-  struct sockaddr *sock;
-  sock = get_sockaddr(user_url);
-}
