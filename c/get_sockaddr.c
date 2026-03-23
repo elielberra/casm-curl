@@ -10,7 +10,7 @@ typedef struct {
   char port[6];
 } url_parts_t;
 
-int domain_to_sockaddr(url_parts_t *url_data, struct sockaddr *sockaddr_data) {
+int domain_to_sockaddr(url_parts_t *url_data, struct sockaddr_in *sockaddr_data) {
   struct addrinfo hint;
   struct addrinfo *result;
   memset(&hint, 0, sizeof(hint));
@@ -21,7 +21,7 @@ int domain_to_sockaddr(url_parts_t *url_data, struct sockaddr *sockaddr_data) {
     fprintf(stderr, "Error: %s (code %i)\n", gai_strerror(status), status);
     return status;
   }
-  memcpy(sockaddr_data, (struct sockaddr_in*)result->ai_addr, sizeof(struct sockaddr));
+  memcpy(sockaddr_data, (struct sockaddr_in*)result->ai_addr, sizeof(struct sockaddr_in));
   freeaddrinfo(result);
   return 0;
 }
@@ -58,15 +58,15 @@ CURLUcode get_url_parts(const char *url_content, url_parts_t *url_data) {
   return 0;
 }
 
-struct sockaddr* get_sockaddr(const char *unprocessed_url){
+struct sockaddr_in* get_sockaddr(const char *unprocessed_url){
   url_parts_t processed_url;
   if (get_url_parts(unprocessed_url, &processed_url) != 0)
-    return (struct sockaddr*)-1;
-  struct sockaddr *remote_addr = malloc(sizeof(struct sockaddr));
-  if (!remote_addr) return (struct sockaddr*)-1;
+    return (struct sockaddr_in*)-1;
+  struct sockaddr_in *remote_addr = malloc(sizeof(struct sockaddr_in));
+  if (!remote_addr) return (struct sockaddr_in*)-1;
   if (domain_to_sockaddr(&processed_url, remote_addr) != 0){
     free(remote_addr);
-    return (struct sockaddr*)-1;
+    return (struct sockaddr_in*)-1;
   }
   return remote_addr;
 }
