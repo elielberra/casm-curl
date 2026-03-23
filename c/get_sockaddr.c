@@ -5,12 +5,12 @@
 #include <string.h>
 #include <netdb.h>
 
-struct url_parts {
+typedef struct {
   char domain[64];
   char port[6];
-};
+} url_parts_t;
 
-int get_sockaddr(struct url_parts *url_data, struct sockaddr *sockaddr_data) {
+int domain_to_sockaddr(url_parts_t *url_data, struct sockaddr *sockaddr_data) {
   struct addrinfo hint;
   struct addrinfo *result;
   memset(&hint, 0, sizeof(hint));
@@ -26,37 +26,50 @@ int get_sockaddr(struct url_parts *url_data, struct sockaddr *sockaddr_data) {
   return 0;
 }
 
-void print_curl_url_err(CURLUcode result_code) {
-  fprintf(stderr, "Error: %s (code %i)\n", curl_url_strerror(result_code), result_code);
+void print_curl_url_err(CURLUcode rc) {
+  fprintf(stderr, "Error: %s (code %i)\n", curl_url_strerror(rc), rc);
 }
 
-CURLUcode get_url_parts(const char *url_content, struct url_parts *url_data) {
-  CURLUcode result_code;
+CURLUcode get_url_parts(const char *url_content, url_parts_t *url_data) {
+  CURLUcode rc;
   CURLU *url = curl_url();
-  result_code = curl_url_set(url, CURLUPART_URL, url_content, CURLU_DEFAULT_SCHEME);
-  if (result_code) {
-    print_curl_url_err(result_code);
-    return result_code;
+  rc = curl_url_set(url, CURLUPART_URL, url_content, CURLU_DEFAULT_SCHEME);
+  if (rc) {
+    print_curl_url_err(rc);
+    return rc;
   }
   char *url_host;
-  result_code = curl_url_get(url, CURLUPART_HOST, &url_host, 0);
-  if (result_code) {
-    print_curl_url_err(result_code);
-    return result_code;
+  rc = curl_url_get(url, CURLUPART_HOST, &url_host, 0);
+  if (rc) {
+    print_curl_url_err(rc);
+    return rc;
   }
   snprintf(url_data->domain, sizeof(url_data->domain), "%s", url_host);
   curl_free(url_host);
   char *url_port;
-  result_code = curl_url_get(url, CURLUPART_PORT, &url_port, CURLU_DEFAULT_PORT);
-  if (result_code) {
-    print_curl_url_err(result_code);
-    return result_code;
+  rc = curl_url_get(url, CURLUPART_PORT, &url_port, CURLU_DEFAULT_PORT);
+  if (rc) {
+    print_curl_url_err(rc);
+    return rc;
   }
   snprintf(url_data->port, sizeof(url_data->port), "%s", url_port);
   curl_free(url_port);
   curl_url_cleanup(url);
   return 0;
-} 
+}
+
+struct sockaddr* get_sockaddr(const char *unprocessed_url){
+  url_parts_t processed_url;
+  if (get_url_parts(unprocessed_url, &processed_url) != 0)
+    return (struct sockaddr*)-1;
+  struct sockaddr *remote_addr = malloc(sizeof(struct sockaddr));
+  if (!remote_addr) return (struct sockaddr*)-1;
+  if (domain_to_sockaddr(&processed_url, remote_addr) != 0){
+    free(remote_addr);
+    return (struct sockaddr*)-1;
+  }
+  return remote_addr;
+}
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -64,11 +77,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   const char *user_url = argv[1];
-  struct url_parts processed_url;
-  CURLUcode result_code = get_url_parts(user_url, &processed_url);
-  if (result_code != CURLUE_OK) return EXIT_FAILURE;
-  struct sockaddr result;
-  int rc = get_sockaddr(&processed_url, &result);
-  if (rc) EXIT_FAILURE;
-  return EXIT_SUCCESS;
+  struct sockaddr *sock;
+  sock = get_sockaddr(user_url);
 }
