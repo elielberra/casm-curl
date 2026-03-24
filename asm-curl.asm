@@ -124,34 +124,37 @@ _close_sock:
   ret
 
 args_err:
-  mov rax, WRITE_CALL
-  mov rdi, FD_STD_ERR
-  mov rsi, args_err_msg
-  mov rdx, args_err_msg_len
-  syscall
-  jmp exit_err
+  lea rsi, args_err_msg
+  lea rdx, args_err_msg_len
+  jmp print_and_exit
 
 sock_err:
   lea rsi, sock_err_msg
   lea rdx, sock_err_msg_len
-  jmp handle_err
+  jmp print_and_exit
 
 connect_err:
   lea rsi, conn_err_msg
   lea rdx, conn_err_msg_len
-  jmp handle_err
+  jmp handle_err_cleanup
 
 send_req_err:
   lea rsi, send_req_err_msg
   lea rdx, send_req_err_msg_len
-  jmp handle_err
+  jmp handle_err_cleanup
 
 read_res_err:
   lea rsi, read_res_err_msg
   lea rdx, read_res_err_msg_len
-  jmp handle_err
+  jmp handle_err_cleanup
 
-handle_err:
+print_and_exit:
+  mov rax, WRITE_CALL
+  mov rdi, FD_STD_ERR
+  syscall
+  jmp exit_err
+
+handle_err_cleanup:
   mov rax, WRITE_CALL
   mov rdi, FD_STD_ERR
   syscall
