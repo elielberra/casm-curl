@@ -100,21 +100,25 @@ _send_req:
   ret
 
 _read_res:
-  sub rsp, RES_BUFF_SIZE ; create buffer for res text on stack
-  mov rax, READ_CALL
-  mov rsi, rsp
-  mov rdx, RES_BUFF_SIZE
-  syscall
-  test rax, rax
-  js read_res_err
-  print_res:
-    mov rdx, rax         ; num of bytes to read 
-    mov rax, WRITE_CALL
-    mov rdi, FD_STD_OUT
-    mov rsi, rsp
+  sub rsp, RES_BUFF_SIZE ; create buffer
+  read_loop:
+    mov rax, READ_CALL
+    mov rdi, r12           ; prevent socket FD from getting clobbered
+    mov rsi, rsp           ; set buffer as arg
+    mov rdx, RES_BUFF_SIZE
     syscall
-  add rsp, RES_BUFF_SIZE ; clean up stack
-  ret
+    test rax, rax
+    jle done              ; if 0 (EOF) or negative (Error), exit loop
+    print_res_chunk;
+      mov rdx, rax           
+      mov rax, WRITE_CALL
+      mov rdi, FD_STD_OUT
+      mov rsi, rsp
+      syscall
+    jmp read_loop
+  done:
+    add rsp, RES_BUFF_SIZE ; clean up stack
+    ret
 
 _close_sock:
   mov rax, CLOSE_CALL
