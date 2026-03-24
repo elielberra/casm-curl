@@ -6,6 +6,7 @@
 %define AF_INET 2
 %define SOCK_STREAM 1
 %define DEFAULT_PROTO 0
+%define SOCKADDR_SIZE 16
 %define CONN_CALL 42
 %define CLOSE_CALL 3
 %define READ_CALL 0
@@ -16,12 +17,8 @@
 %define ERR_EXIT_STAT 1
 %define NO_ERR_EXIT_STAT 0
 
-struc sock_addr
-  .family resw 1
-  .port resw 1
-  .ip resd 1
-  .padding resq 1
-endstruc
+extern get_sockaddr
+extern free
 
 section .data
   args_err_msg: db "Error: Wrong number of arguments. Usage: asm-curl <URL>", NEW_LINE
@@ -34,30 +31,13 @@ section .data
   send_req_err_msg_len: equ $ - send_req_err_msg
   read_res_err_msg: db "Errow while reading the response", NEW_LINE
   read_res_err_msg_len: equ $ - read_res_err_msg
-  addr:
-    istruc sock_addr
-      at sock_addr.family, dw AF_INET
-      at sock_addr.port, dw 0x401F    ; sin_port: 8000 (little endian 0x1F40-> big endian)
-      at sock_addr.ip, db 127,0,0,1
-      at sock_addr.padding, dq 0
-    iend
-  addr_len: equ $ - addr
   req:
     db "GET / HTTP/1.1",CARRIAGE_RET,NEW_LINE
-    db "Host: 127.0.0.1",CARRIAGE_RET,NEW_LINE
     db "User-Agent: asm-curl",CARRIAGE_RET,NEW_LINE
     db "Connection: close",CARRIAGE_RET,NEW_LINE,CARRIAGE_RET,NEW_LINE
   req_len: equ $ - req
 
 section .text
-
-args_err:
-  mov rax, WRITE_CALL
-  mov rdi, FD_STD_ERR
-  mov rsi, args_err_msg
-  mov rdx, args_err_msg_len
-  syscall
-  jmp exit_err
 
 _parse_args:
   cmp rdi, NUM_REQ_ARGS
@@ -65,14 +45,18 @@ _parse_args:
   mov rax, rsi
   ret
 
-global _start
-_start:
-  mov rdi, [rsp]
-  mov rsi, [rsp + 16]
-  call _parse_args
+global main
+main:
+  parse_args:
+    cmp rdi, NUM_REQ_ARGS
+    jne args_err
+    mov r13, [rsi + 8] ; prevent URL argv[1] from getting globbered
   call _create_sock
-  mov r12, rax      ; prevent FD from getting clobbered
-  mov rdi, r12      ; set FD as param for syscall inside next function
+  mov r12, rax       ; prevent FD from getting clobbered
+  mov rdi, r13       ; pass URL argv[1] as param
+  call _resolve_url
+  mov rdi, r12       ; set FD as param for syscall inside next function
+  mov rsi, rax       ; pass sockaddr as param
   call _connect
   mov rdi, r12
   call _send_req
@@ -80,7 +64,7 @@ _start:
   call _read_res
   mov rdi, r12
   call _close_sock
-  jmp exit
+  jmp exit          ; TODO: Call ret instead of exit
 
 _create_sock:
   mov rax, SOCKET_CALL
@@ -92,11 +76,20 @@ _create_sock:
   js sock_err
   ret
 
+_resolve_url:
+  ; sub rsp, 8            ; Manual alignment
+  call get_sockaddr
+  ; add rsp, 8            ; Restore for 'ret'
+  test rax, rax
+  js exit_err
+  ret
+
 _connect:
   mov rax, CONN_CALL
-  lea rsi, addr
-  mov rdx, addr_len
+  mov rdx, SOCKADDR_SIZE
   syscall
+  mov rdi, rsi
+  call free
   test rax, rax
   js connect_err
   ret
@@ -131,6 +124,14 @@ _close_sock:
   mov rax, CLOSE_CALL
   syscall
   ret
+
+args_err:
+  mov rax, WRITE_CALL
+  mov rdi, FD_STD_ERR
+  mov rsi, args_err_msg
+  mov rdx, args_err_msg_len
+  syscall
+  jmp exit_err
 
 sock_err:
   lea rsi, sock_err_msg
@@ -172,3 +173,5 @@ exit:
   mov rax, EXIT_CALL
   mov rdi, NO_ERR_EXIT_STAT
   syscall
+
+section .note.GNU-stack noalloc noexec nowrite progbits
