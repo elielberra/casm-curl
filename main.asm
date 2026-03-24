@@ -43,17 +43,17 @@ global main
 main:
   call _parse_args
   call _create_sock
-  mov r12, rax             ; prevent FD from getting clobbered
-  mov rdi, r13             ; pass URL as param
+  mov r13, rax             ; prevent FD from getting clobbered
+  mov rdi, r12             ; pass URL as param
   call _resolve_url
-  mov rdi, r12             ; set FD as param for syscall inside next function
+  mov rdi, r13             ; set FD as param for syscall inside next function
   mov rsi, rax             ; pass sockaddr as param
   call _connect
-  mov rdi, r12
+  mov rdi, r13
   call _send_req
-  mov rdi, r12
+  mov rdi, r13
   call _read_res
-  mov rdi, r12
+  mov rdi, r13
   call _close_sock
   xor rax, rax
   ret                      ; exit program following CRT convention
@@ -61,7 +61,7 @@ main:
 _parse_args:
   cmp rdi, NUM_REQ_ARGS
   jne args_err
-  mov r13, [rsi + 8]       ; prevent second item in argv array from getting clobbered
+  mov r12, [rsi + 8]       ; prevent second item in argv array from getting clobbered
   ret
 
 _create_sock:
@@ -103,7 +103,7 @@ _read_res:
   sub rsp, RES_BUFF_SIZE   ; create buffer
   read_loop:
     mov rax, READ_CALL
-    mov rdi, r12           ; prevent socket FD from getting clobbered
+    mov rdi, r13           ; prevent socket FD from getting clobbered
     mov rsi, rsp           ; set buffer as arg
     mov rdx, RES_BUFF_SIZE
     syscall
@@ -163,7 +163,7 @@ handle_err_cleanup:
   jmp err_cleanup
 
 err_cleanup:
-  mov rdi, r12
+  mov rdi, r13
   call _close_sock
   jmp exit_err
 
