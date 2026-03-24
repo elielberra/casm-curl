@@ -39,18 +39,9 @@ section .data
 
 section .text
 
-_parse_args:
-  cmp rdi, NUM_REQ_ARGS
-  jne args_err
-  mov rax, rsi
-  ret
-
 global main
 main:
-  parse_args:
-    cmp rdi, NUM_REQ_ARGS
-    jne args_err
-    mov r13, [rsi + 8] ; prevent URL argv[1] from getting globbered
+  call _parse_args
   call _create_sock
   mov r12, rax       ; prevent FD from getting clobbered
   mov rdi, r13       ; pass URL argv[1] as param
@@ -65,6 +56,12 @@ main:
   mov rdi, r12
   call _close_sock
   jmp exit          ; TODO: Call ret instead of exit
+
+_parse_args:
+  cmp rdi, NUM_REQ_ARGS
+  jne args_err
+  mov r13, [rsi + 8]
+  ret
 
 _create_sock:
   mov rax, SOCKET_CALL
