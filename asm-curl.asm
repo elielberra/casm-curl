@@ -55,7 +55,8 @@ main:
   call _read_res
   mov rdi, r12
   call _close_sock
-  jmp exit          ; TODO: Call ret instead of exit
+  xor rax, rax
+  ret               ; exit program following CRT convention
 
 _parse_args:
   cmp rdi, NUM_REQ_ARGS
@@ -164,11 +165,6 @@ err_cleanup:
 exit_err:
   mov rax, EXIT_CALL
   mov rdi, ERR_EXIT_STAT
-  syscall
-
-exit:
-  mov rax, EXIT_CALL
-  mov rdi, NO_ERR_EXIT_STAT
   syscall
 
 section .note.GNU-stack noalloc noexec nowrite progbits
