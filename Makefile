@@ -1,16 +1,27 @@
-ASSEMBLER = nasm
-ASM_FLAGS = -f elf64 -g
-ASM_SRC = asm-curl.asm
-OBJECT = asm-curl.o
-TARGET = asm-curl
+# Compilers
+ASM=nasm
+CC=clang
+# Flags
+ASM_FLAGS=-f elf64 -F dwarf -g
+CC_FLAGS=-g -Wall
+LD_FLAGS=-lcurl -no-pie
+# Files
+ASM_SRC=asm-curl.asm
+ASM_OBJ=asm-curl.o
+TARGET=asm-curl
+C_SRC=get_sockaddr.c
+C_OBJ=get_sockaddr.o
 
 all: $(TARGET)
 
-$(OBJECT): $(ASM_SRC)
-	$(ASSEMBLER) $(ASM_FLAGS) $(ASM_SRC)
+$(TARGET): $(ASM_OBJ) $(C_OBJ)
+	$(CC) $(CC_FLAGS) -o $@ $^ $(LD_FLAGS)
 
-$(TARGET): $(OBJECT)
-	ld -o $(TARGET) $(OBJECT)
+$(ASM_OBJ): $(ASM_SRC)
+	$(ASM) $(ASM_FLAGS) -o $@ $< 
+
+$(C_OBJ): $(C_SRC)
+	$(CC) $(CC_FLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(OBJECT) $(TARGET)
+	rm -f $(TARGET) *.o
