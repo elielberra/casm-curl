@@ -1,7 +1,5 @@
 *.o
-asm-curl
-get_ip
-get_domain
+casm-curl
 get_sockaddr
 .vscode
 *.dSYM

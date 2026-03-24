@@ -6,9 +6,9 @@ ASM_FLAGS=-f elf64 -F dwarf -g
 CC_FLAGS=-g -Wall
 LD_FLAGS=-lcurl -no-pie
 # Files
-ASM_SRC=asm-curl.asm
-ASM_OBJ=asm-curl.o
-TARGET=asm-curl
+ASM_SRC=main.asm
+ASM_OBJ=main.o
+TARGET=casm-curl
 C_SRC=get_sockaddr.c
 C_OBJ=get_sockaddr.o
 
