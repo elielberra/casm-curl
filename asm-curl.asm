@@ -44,7 +44,7 @@ main:
   call _parse_args
   call _create_sock
   mov r12, rax       ; prevent FD from getting clobbered
-  mov rdi, r13       ; pass URL argv[1] as param
+  mov rdi, r13       ; pass URL as param
   call _resolve_url
   mov rdi, r12       ; set FD as param for syscall inside next function
   mov rsi, rax       ; pass sockaddr as param
@@ -61,7 +61,7 @@ main:
 _parse_args:
   cmp rdi, NUM_REQ_ARGS
   jne args_err
-  mov r13, [rsi + 8]
+  mov r13, [rsi + 8]    ; prevent second item in argv array from getting clobbered
   ret
 
 _create_sock:
@@ -75,9 +75,7 @@ _create_sock:
   ret
 
 _resolve_url:
-  ; sub rsp, 8            ; Manual alignment
   call get_sockaddr
-  ; add rsp, 8            ; Restore for 'ret'
   test rax, rax
   js exit_err
   ret
