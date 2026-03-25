@@ -115,7 +115,7 @@ read_res:
       mov rdi, FD_STD_OUT
       mov rsi, rsp
       syscall
-    jmp .read_loop
+    jmp .loop
   .done:
     add rsp, RES_BUFF_SIZE ; clean up stack
     ret
