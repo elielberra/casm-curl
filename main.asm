@@ -77,7 +77,7 @@ create_sock:
 resolve_url:
   call get_sockaddr
   test rax, rax
-  js exit_err
+  js err_cleanup
   ret
 
 connect:
