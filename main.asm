@@ -41,30 +41,30 @@ section .text
 
 global main
 main:
-  call _parse_args
-  call _create_sock
+  call parse_args
+  call create_sock
   mov r13, rax             ; prevent FD from getting clobbered
   mov rdi, r12             ; pass URL as param
-  call _resolve_url
+  call resolve_url
   mov rdi, r13             ; set FD as param for syscall inside next function
   mov rsi, rax             ; pass sockaddr as param
-  call _connect
+  call connect
   mov rdi, r13
-  call _send_req
+  call send_req
   mov rdi, r13
-  call _read_res
+  call read_res
   mov rdi, r13
-  call _close_sock
+  call close_sock
   xor rax, rax
   ret                      ; exit program following CRT convention
 
-_parse_args:
+parse_args:
   cmp rdi, NUM_REQ_ARGS
   jne args_err
   mov r12, [rsi + 8]       ; prevent second item in argv array from getting clobbered
   ret
 
-_create_sock:
+create_sock:
   mov rax, SOCKET_CALL
   mov rdi, AF_INET
   mov rsi, SOCK_STREAM
@@ -74,13 +74,13 @@ _create_sock:
   js sock_err
   ret
 
-_resolve_url:
+resolve_url:
   call get_sockaddr
   test rax, rax
   js exit_err
   ret
 
-_connect:
+connect:
   mov rax, CONN_CALL
   mov rdx, SOCKADDR_SIZE
   syscall
@@ -90,7 +90,7 @@ _connect:
   js connect_err
   ret
 
-_send_req:
+send_req:
   mov rax, WRITE_CALL
   lea rsi, req
   mov rdx, req_len
@@ -99,28 +99,28 @@ _send_req:
   js send_req_err
   ret
 
-_read_res:
+read_res:
   sub rsp, RES_BUFF_SIZE   ; create buffer
-  read_loop:
+  .loop:
     mov rax, READ_CALL
     mov rdi, r13           ; prevent socket FD from getting clobbered
     mov rsi, rsp           ; set buffer as arg
     mov rdx, RES_BUFF_SIZE
     syscall
     test rax, rax
-    jle done               ; if 0 (EOF) or negative (Error), exit loop
-    print_res_chunk:
+    jle .done               ; if 0 (EOF) or negative (Error), exit loop
+    .print_res_chunk:
       mov rdx, rax           
       mov rax, WRITE_CALL
       mov rdi, FD_STD_OUT
       mov rsi, rsp
       syscall
-    jmp read_loop
-  done:
+    jmp .read_loop
+  .done:
     add rsp, RES_BUFF_SIZE ; clean up stack
     ret
 
-_close_sock:
+close_sock:
   mov rax, CLOSE_CALL
   syscall
   ret
@@ -164,7 +164,7 @@ handle_err_cleanup:
 
 err_cleanup:
   mov rdi, r13
-  call _close_sock
+  call close_sock
   jmp exit_err
 
 exit_err:
