@@ -26,8 +26,9 @@ int domain_to_sockaddr(url_parts_t *url_data, struct sockaddr_in *sockaddr_data)
   return 0;
 }
 
-void print_curl_url_err(CURLUcode rc) {
+void handle_curl_url_err(CURLUcode rc, CURLU *url) {
   fprintf(stderr, "Error: %s (code %i)\n", curl_url_strerror(rc), rc);
+  curl_url_cleanup(url);
 }
 
 CURLUcode get_url_parts(const char *url_content, url_parts_t *url_data) {
@@ -35,13 +36,13 @@ CURLUcode get_url_parts(const char *url_content, url_parts_t *url_data) {
   CURLU *url = curl_url();
   rc = curl_url_set(url, CURLUPART_URL, url_content, CURLU_DEFAULT_SCHEME);
   if (rc) {
-    print_curl_url_err(rc);
+    handle_curl_url_err(rc, url);
     return rc;
   }
   char *url_host;
   rc = curl_url_get(url, CURLUPART_HOST, &url_host, 0);
   if (rc) {
-    print_curl_url_err(rc);
+    handle_curl_url_err(rc, url);
     return rc;
   }
   snprintf(url_data->domain, sizeof(url_data->domain), "%s", url_host);
@@ -49,7 +50,7 @@ CURLUcode get_url_parts(const char *url_content, url_parts_t *url_data) {
   char *url_port;
   rc = curl_url_get(url, CURLUPART_PORT, &url_port, CURLU_DEFAULT_PORT);
   if (rc) {
-    print_curl_url_err(rc);
+    handle_curl_url_err(rc, url);
     return rc;
   }
   snprintf(url_data->port, sizeof(url_data->port), "%s", url_port);
