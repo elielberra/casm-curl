@@ -11,18 +11,18 @@ typedef struct {
 } url_parts_t;
 
 int domain_to_sockaddr(url_parts_t *url_data, struct sockaddr_in *sockaddr_data) {
-  struct addrinfo hint;
-  struct addrinfo *result;
-  memset(&hint, 0, sizeof(hint));
-  hint.ai_family = AF_INET;
-  hint.ai_socktype = SOCK_STREAM;
-  int status = getaddrinfo(url_data->domain, url_data->port, &hint, &result);
+  struct addrinfo filters;
+  struct addrinfo *dns_result;
+  memset(&filters, 0, sizeof(filters));
+  filters.ai_family = AF_INET;
+  filters.ai_socktype = SOCK_STREAM;
+  int status = getaddrinfo(url_data->domain, url_data->port, &filters, &dns_result);
   if (status) {
     fprintf(stderr, "Error: %s (code %i)\n", gai_strerror(status), status);
     return status;
   }
-  memcpy(sockaddr_data, (struct sockaddr_in*)result->ai_addr, sizeof(struct sockaddr_in));
-  freeaddrinfo(result);
+  memcpy(sockaddr_data, (struct sockaddr_in*)dns_result->ai_addr, sizeof(struct sockaddr_in));
+  freeaddrinfo(dns_result);
   return 0;
 }
 
