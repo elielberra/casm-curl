@@ -6,7 +6,7 @@
 #include <netdb.h>
 
 typedef struct {
-  char domain[64];
+  char domain[256]; // FQDN Max size is 253 + null terminator + padding
   char port[6];
 } url_parts_t;
 
